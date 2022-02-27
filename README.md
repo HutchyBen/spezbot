@@ -1,7 +1,7 @@
 
-# Project Title
+# spezbot
 
-A brief description of what this project does and who it's for
+bot for spez. mostly music bot
 
 ## Command list
 - play <string/uri/none>
