@@ -3,6 +3,16 @@
 
 bot for spez. mostly music bot
 
+
+## woah has a queue that works like this
+</br>
+<image display="block" width=200px height=200px src="https://user-images.githubusercontent.com/38333275/155885217-e6b4dd88-261b-4a82-98c6-7fd18f844eb5.png">
+ </br>
+each person who has queue has there own queue which they can shuffle independently to not piss others
+ </br>
+  </br>
+also asks like for confirmation to skip if not ur song so they cant say whoops i accidently skipped ur song.
+
 ## Command list
 - play <string/uri/none>
 - playnow <string/uri/none>
