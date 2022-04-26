@@ -7,9 +7,13 @@ using Microsoft.Extensions.DependencyInjection;
 using DSharpPlus.Entities;
 using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Extensions;
-using System.Runtime;
+using DSharpPlus.EventArgs;
+
 namespace Music
 {
+
+
+
     class Bot
     {
         public static DiscordChannel? GetUserVC(DiscordMember member)
@@ -26,28 +30,29 @@ namespace Music
             }
             return chan;
         }
+        public static ServiceProvider service;
         public static DiscordClient Discord;
         public static LavalinkExtension Lavalink;
         static void Main(string[] args)
         {
             MainAsync(args).ConfigureAwait(false).GetAwaiter().GetResult();
-            
+
         }
+
 
         static async Task MainAsync(string[] args)
         {
             var token = Environment.GetEnvironmentVariable("dtoken");
-           
             Discord = new DiscordClient(new DiscordConfiguration()
             {
                 Token = token,
                 TokenType = TokenType.Bot,
                 AutoReconnect = true,
                 Intents = DiscordIntents.All,
-                
+
                 MinimumLogLevel = LogLevel.Information
             });
-            var service = new ServiceCollection()
+            service = new ServiceCollection()
                 .AddSingleton<Dictionary<ulong, ServerInstance>>()
                 .BuildServiceProvider();
             var commands = Discord.UseCommandsNext(new CommandsNextConfiguration()
@@ -80,7 +85,49 @@ namespace Music
                 RestEndpoint = endpoint,
                 SocketEndpoint = endpoint,
             });
+
+            Discord.VoiceStateUpdated += VoiceStateChange;
+
             await Task.Delay(-1);
+        }
+
+        static async Task VoiceStateChange(DiscordClient client, VoiceStateUpdateEventArgs e)
+        {
+            var Servers = service.GetService<Dictionary<ulong, ServerInstance>>();
+            ServerInstance? inst;
+            if (Servers.TryGetValue(e.Guild.Id, out inst))
+            {
+                if (inst == null)
+                {
+                    return;
+                }
+                if (e.Before == null)
+                {
+                    return;
+                }
+                if (e.After == null)
+                {
+                    return;
+                }
+                if (e.After.Channel == null)
+                {
+                    return;
+                }
+                if (e.Before.Channel == null)
+                {
+                    return;
+                }
+                if (e.Before.Channel.Id == e.After.Channel.Id)
+                {
+                    return;
+                }
+                if (e.Before.Channel.Id == inst.channel.Id)
+                {
+                    inst.channel = e.After.Channel;
+                }
+
+            };
+            return;
         }
     }
 }

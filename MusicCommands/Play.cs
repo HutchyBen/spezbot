@@ -105,7 +105,7 @@ namespace Music.MusicCommands
 
 
         public Dictionary<ulong, ServerInstance> Servers { get; set; }
-        [Command, Priority(0)]
+        [Command, Aliases("p"), Priority(0)]
         public async Task Play(CommandContext ctx, [RemainingText] string search)
         {
 
