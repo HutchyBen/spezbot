@@ -30,9 +30,11 @@ namespace Music
             }
             return chan;
         }
-        public static ServiceProvider service;
-        public static DiscordClient Discord;
-        public static LavalinkExtension Lavalink;
+        public static ServiceProvider service = new ServiceCollection()
+                .AddSingleton<Dictionary<ulong, ServerInstance>>()
+                .BuildServiceProvider();
+        public static DiscordClient? Discord;
+        public static LavalinkExtension? Lavalink;
         static void Main(string[] args)
         {
             MainAsync(args).ConfigureAwait(false).GetAwaiter().GetResult();
@@ -93,7 +95,7 @@ namespace Music
 
         static async Task VoiceStateChange(DiscordClient client, VoiceStateUpdateEventArgs e)
         {
-            var Servers = service.GetService<Dictionary<ulong, ServerInstance>>();
+            var Servers = service.GetRequiredService<Dictionary<ulong, ServerInstance>>();
             ServerInstance? inst;
             if (Servers.TryGetValue(e.Guild.Id, out inst))
             {
@@ -123,6 +125,8 @@ namespace Music
                 }
                 if (e.Before.Channel.Id == inst.channel.Id)
                 {
+
+                    await Discord!.SendMessageAsync(inst.msgChannel, "Moved channel");
                     inst.channel = e.After.Channel;
                 }
 
