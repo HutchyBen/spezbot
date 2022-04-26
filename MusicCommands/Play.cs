@@ -55,7 +55,7 @@ namespace Music.MusicCommands
             await Join(ctx);
 
             var inst = Servers[ctx.Guild.Id];
-            if (ctx.Member.VoiceState == null || ctx.Member.VoiceState.Channel.Id != inst.channel.Id) {
+            if (ctx.Member?.VoiceState == null || ctx.Member.VoiceState.Channel.Id != inst.channel.Id) {
                     var embed = new DiscordEmbedBuilder {
                         Title = ":warning: You are not in the same voice channel as the bot",
                         Description = "Join the voice channel of the bot to skip songs.",
@@ -104,7 +104,7 @@ namespace Music.MusicCommands
         }
 
 
-        public Dictionary<ulong, ServerInstance> Servers { get; set; }
+        public Dictionary<ulong, ServerInstance> Servers = new Dictionary<ulong, ServerInstance>();
         [Command, Aliases("p"), Priority(0)]
         public async Task Play(CommandContext ctx, [RemainingText] string search)
         {
@@ -113,7 +113,7 @@ namespace Music.MusicCommands
             if (tracks == null)
                 return;
             var inst = Servers[ctx.Guild.Id];
-            await inst.AddSong(tracks, ctx.Member);
+            await inst.AddSong(tracks, ctx.Member!);
 
         }
 
@@ -125,7 +125,7 @@ namespace Music.MusicCommands
             if (tracks == null)
                 return;
             var inst = Servers[ctx.Guild.Id];
-            await inst.AddSong(tracks, ctx.Member);
+            await inst.AddSong(tracks, ctx.Member!);
 
         }
 
@@ -136,7 +136,7 @@ namespace Music.MusicCommands
             if (tracks == null)
                 return;
             var inst = Servers[ctx.Guild.Id];
-            await inst.AddNext(tracks, ctx.Member);
+            await inst.AddNext(tracks, ctx.Member!);
 
         }
 
@@ -148,7 +148,7 @@ namespace Music.MusicCommands
             if (tracks == null)
                 return;
             var inst = Servers[ctx.Guild.Id];
-            await inst.AddNext(tracks, ctx.Member);
+            await inst.AddNext(tracks, ctx.Member!);
         }
 
         [Command("PlayNow"), Priority(0)]
@@ -158,7 +158,7 @@ namespace Music.MusicCommands
             if (tracks == null)
                 return;
             var inst = Servers[ctx.Guild.Id];
-            await inst.AddNext(tracks, ctx.Member, true);
+            await inst.AddNext(tracks, ctx.Member!, true);
         }
 
         [Command("PlayNow"), Priority(1)]
@@ -169,7 +169,7 @@ namespace Music.MusicCommands
             if (tracks == null)
                 return;
             var inst = Servers[ctx.Guild.Id];
-            await inst.AddNext(tracks, ctx.Member, true);
+            await inst.AddNext(tracks, ctx.Member!, true);
         }
     }
 }

@@ -13,6 +13,7 @@ namespace Music.MusicCommands
                 var queue = inst.userSongs.Find(x => x.member == ctx.Member);
                 if (queue != null) {
                     queue.Shuffle();
+                    await ctx.RespondAsync($"Shuffled {queue.member.Nickname}'s queue");
                 }
             }
         }

@@ -8,7 +8,7 @@ namespace Music.MusicCommands
 {
     public partial class MusicCommands : BaseCommandModule
     {
-        async Task<string> GetProgress(LavalinkTrack song, LavalinkGuildConnection connection) {
+        string GetProgress(LavalinkTrack song, LavalinkGuildConnection connection) {
             var prog = connection.CurrentState.PlaybackPosition.TotalSeconds / song.Length.TotalSeconds;
             var emoPos = (int)Math.Round(11 * prog);
 
@@ -37,7 +37,7 @@ namespace Music.MusicCommands
                     Footer = new DiscordEmbedBuilder.EmbedFooter {
                         Text = $"Uploader: {song.track.Author}",
                     },
-                    Description = await GetProgress(song.track, inst.connection),
+                    Description = GetProgress(song.track, inst.connection),
                     Color = DiscordColor.Green,
                     Url = song.track.Uri.ToString()
                 };
@@ -45,7 +45,7 @@ namespace Music.MusicCommands
                 var res = msg.WaitForReactionAsync(ctx.Member, DiscordEmoji.FromUnicode("⏹️"), TimeSpan.FromMinutes(2));
                 while (!res.IsCompleted)
                 {
-                    embed.Description = await GetProgress(song.track, inst.connection);
+                    embed.Description = GetProgress(song.track, inst.connection);
                     await msg.ModifyAsync(embed: embed.Build());
                     await Task.Delay(2000);
                 }

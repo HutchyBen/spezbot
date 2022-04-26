@@ -14,7 +14,7 @@ namespace Music.MusicCommands
         {
             if (!Servers.ContainsKey(ctx.Guild.Id))
             {
-                var chan = Music.Bot.GetUserVC(ctx.Member);
+                var chan = Music.Bot.GetUserVC(ctx.Member!);
                 if (chan == null)
                 {
                     var embed = new DiscordEmbedBuilder
@@ -34,12 +34,12 @@ namespace Music.MusicCommands
         [Command("leave")]
         public async Task Leave(CommandContext ctx)
         {
-            ServerInstance inst; 
+            ServerInstance? inst; 
             var exists = Servers.TryGetValue(ctx.Guild.Id, out inst);
             if (exists)
             {
                 ctx.Client.Logger.Log(LogLevel.Information, "Left");
-                await inst.connection.DisconnectAsync();
+                await inst!.connection.DisconnectAsync();
                 Servers.Remove(ctx.Guild.Id);
             }
         }

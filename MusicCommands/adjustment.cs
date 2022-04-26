@@ -22,6 +22,7 @@ namespace Music.MusicCommands
                 MethodInfo[] methods = t.GetMethods(BindingFlags.NonPublic | BindingFlags.Instance);
                 var jsonstr = "{\"op\":\"volume\",\"volume\":" + volume.ToString() + ",\"guildId\":\"" + inst.connection.Guild.Id.ToString() + "\"}";
                 methods.Where(m => m.Name == "WsSendAsync").First().Invoke(inst.connection.Node, new object[] { jsonstr });
+                await ctx.RespondAsync($"Set volume to {volume}%");
             }
         }
         [Command("bigdirtystinkingbass")]

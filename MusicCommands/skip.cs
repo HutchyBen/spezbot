@@ -12,7 +12,8 @@ namespace Music.MusicCommands {
             var inst = Servers[ctx.Guild.Id];
             if (inst != null) {
                 // check if user is in bots voice channel
-                if (ctx.Member.VoiceState == null || ctx.Member.VoiceState.Channel.Id != inst.channel.Id) {
+
+                if (ctx.Member!.VoiceState == null || ctx.Member.VoiceState.Channel.Id != inst.channel.Id) {
                     var embed = new DiscordEmbedBuilder {
                         Title = ":warning: You are not in the same voice channel as the bot",
                         Description = "Join the voice channel of the bot to skip songs.",

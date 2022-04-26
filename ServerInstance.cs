@@ -16,8 +16,9 @@ namespace Music
             this.member = member;
             queue = new List<LavalinkTrack>();
         }
-        
-        public void Shuffle() {
+
+        public void Shuffle()
+        {
             // Fisher-Yates shuffle
             Random rng = new Random();
             int n = queue.Count;
@@ -57,15 +58,15 @@ namespace Music
                 return;
             }
 
-            
 
-            NowPlaying = new NowSong(userSongs[currentListIndex].member,userSongs[currentListIndex].queue[0]);
+
+            NowPlaying = new NowSong(userSongs[currentListIndex].member, userSongs[currentListIndex].queue[0]);
             userSongs[currentListIndex].queue.RemoveAt(0);
             if (userSongs[currentListIndex].queue.Count == 0)
             {
                 userSongs.RemoveAt(currentListIndex);
             }
-            
+
             if (currentListIndex >= userSongs.Count - 1)
             {
                 currentListIndex = 0;
@@ -74,7 +75,7 @@ namespace Music
             {
                 currentListIndex++;
             }
-            
+
             await connection.PlayAsync(NowPlaying.track);
             await PrintPlaying();
         }
@@ -104,7 +105,7 @@ namespace Music
             var lava = client.GetLavalink();
             if (!lava.ConnectedNodes.Any())
             {
-                return;
+                throw new Exception("No nodes connected!");
             }
             var node = lava.ConnectedNodes.Values.First();
 
@@ -118,8 +119,8 @@ namespace Music
                 this.connection = node.ConnectAsync(channel).ConfigureAwait(false).GetAwaiter().GetResult();
             }
             connection.PlaybackFinished += PlaybackFinished;
-            userSongs = new List<UserSongList>();
-            msgChannel = msgChan;
+            this.userSongs = new List<UserSongList>();
+            this.msgChannel = msgChan;
         }
         public async Task Skip()
         {
@@ -127,7 +128,59 @@ namespace Music
             await connection.StopAsync();
         }
 
-        
+
+        public async Task AddMessage(LavalinkTrack track, DiscordMember member)
+        {
+            var list = userSongs.FindIndex(x => x.member == member);
+            if (connection.CurrentState.CurrentTrack == null)
+            {
+                NowPlaying = new NowSong(userSongs[list].member, userSongs[list].queue[0]);
+                await connection.PlayAsync(NowPlaying.track);
+                if (userSongs[list].queue.Count <= 1)
+                {
+                    userSongs.RemoveAt(list);
+                }
+                await PrintPlaying();
+            }
+            else
+            {
+                connection.Node.Parent.Client.Logger.Log(LogLevel.Information, "Added song to queue");
+
+                var queue = new DiscordEmbedBuilder
+                {
+                    Title = "Added to queue",
+                    Description = $"{track.Title}",
+                    Footer = new DiscordEmbedBuilder.EmbedFooter()
+                    {
+                        Text = track.Author
+                    },
+                    Author = new DiscordEmbedBuilder.EmbedAuthor()
+                    {
+                        IconUrl = member.GetAvatarUrl(ImageFormat.Png),
+                        Name = member.DisplayName
+                    },
+                    Url = track.Uri.ToString(),
+                    Color = DiscordColor.Green
+                };
+                await msgChannel.SendMessageAsync(embed: queue);
+
+            }
+        }
+        public async Task AddSong(LavalinkTrack track, DiscordMember member)
+        {
+            var list = userSongs.FindIndex(x => x.member == member);
+            if (list == -1)
+            {
+                userSongs.Add(new UserSongList(member));
+                list = userSongs.Count - 1;
+            }
+
+            userSongs[list].queue.Add(track);
+
+            await AddMessage(track, member);
+
+        }
+
         public async Task AddSong(LavalinkLoadResult result, DiscordMember member)
         {
             // playlist
@@ -135,7 +188,7 @@ namespace Music
             if (list == -1)
             {
                 userSongs.Add(new UserSongList(member));
-                list = userSongs.FindIndex(x => x.member == member);
+                list = userSongs.Count - 1;
             }
 
             if (result.LoadResultType == LavalinkLoadResultType.TrackLoaded || result.LoadResultType == LavalinkLoadResultType.SearchResult)
@@ -167,40 +220,7 @@ namespace Music
                 await msgChannel.SendMessageAsync(embed: embed2);
             }
 
-            if (connection.CurrentState.CurrentTrack == null)
-            {
-                NowPlaying = new NowSong(userSongs[list].member, userSongs[list].queue[0]);
-                await connection.PlayAsync(NowPlaying.track);
-                if (userSongs[list].queue.Count <= 1)
-                {
-                    userSongs.RemoveAt(list);
-                }
-                await PrintPlaying();
-            }
-            else
-            {
-                connection.Node.Parent.Client.Logger.Log(LogLevel.Information, "Added song to queue");
-                if (result.LoadResultType == LavalinkLoadResultType.TrackLoaded || result.LoadResultType == LavalinkLoadResultType.SearchResult)
-                {
-                    var queue = new DiscordEmbedBuilder
-                    {
-                        Title = "Added to queue",
-                        Description = $"{result.Tracks.First().Title}",
-                        Footer = new DiscordEmbedBuilder.EmbedFooter()
-                        {
-                            Text = result.Tracks.First().Author
-                        },
-                        Author = new DiscordEmbedBuilder.EmbedAuthor()
-                        {
-                            IconUrl = member.GetAvatarUrl(ImageFormat.Png),
-                            Name = member.DisplayName
-                        },
-                        Url = result.Tracks.First().Uri.ToString(),
-                        Color = DiscordColor.Green
-                    };
-                    await msgChannel.SendMessageAsync(embed: queue);
-                }
-            }
+            await AddMessage(result.Tracks.First(), member);
 
         }
 
@@ -246,7 +266,7 @@ namespace Music
             }
 
             currentListIndex = list;
-            
+
             if (connection.CurrentState.CurrentTrack == null)
             {
                 NowPlaying = new NowSong(userSongs[list].member, userSongs[list].queue[0]);
@@ -255,14 +275,15 @@ namespace Music
                 {
                     userSongs.RemoveAt(list);
                 }
-                
+
                 await PrintPlaying();
             }
             else if (skip)
             {
                 await Skip();
             }
-            else {
+            else
+            {
                 connection.Node.Parent.Client.Logger.Log(LogLevel.Information, "Added song to queue");
                 if (result.LoadResultType == LavalinkLoadResultType.TrackLoaded || result.LoadResultType == LavalinkLoadResultType.SearchResult)
                 {
