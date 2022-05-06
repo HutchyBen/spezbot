@@ -3,7 +3,7 @@ using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Lavalink;
 using System.Reflection;
 using DSharpPlus.Lavalink.Entities;
-namespace Music.MusicCommands
+namespace Music.Commands
 {
     public partial class MusicCommands : BaseCommandModule
     {

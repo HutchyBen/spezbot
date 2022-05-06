@@ -2,7 +2,7 @@ using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using DSharpPlus.Interactivity.Extensions;
-namespace Music.MusicCommands {
+namespace Music.Commands {
     public partial class MusicCommands : BaseCommandModule {
 
 

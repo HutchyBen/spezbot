@@ -11,9 +11,6 @@ using DSharpPlus.EventArgs;
 
 namespace Music
 {
-
-
-
     class Bot
     {
         public static DiscordChannel? GetUserVC(DiscordMember member)
@@ -65,7 +62,7 @@ namespace Music
                 Services = service
             });
             commands.RegisterCommands<TestCommands>();
-            commands.RegisterCommands<MusicCommands.MusicCommands>();
+            commands.RegisterCommands<Commands.MusicCommands>();
             Lavalink = Discord.UseLavalink();
             var endpoint = new ConnectionEndpoint
             {

@@ -1,7 +1,7 @@
 ﻿using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 
-namespace Music.MusicCommands
+namespace Music.Commands
 {
     public partial class MusicCommands : BaseCommandModule
     {

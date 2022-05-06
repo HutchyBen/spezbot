@@ -8,7 +8,7 @@
     <PublishReadyToRun>true</PublishReadyToRun>
     <SelfContained>true</SelfContained>
     <Nullable>enable</Nullable>
-    <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <DebugType>embedded</DebugType>
   </PropertyGroup>
 

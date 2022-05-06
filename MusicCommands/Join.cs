@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 using DSharpPlus.Entities;
 
 
-namespace Music.MusicCommands
+namespace Music.Commands
 {
     public partial class MusicCommands : BaseCommandModule
     {

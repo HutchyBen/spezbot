@@ -3,13 +3,14 @@ using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Extensions;
-namespace Music.MusicCommands
+namespace Music.Commands
 {
     public partial class MusicCommands : BaseCommandModule
     {
         [Command("search")]
         public async Task Search(CommandContext ctx, [RemainingText] string search)
         {
+            await Join(ctx);
             var inst = Servers[ctx.Guild.Id];
             if (inst != null) {
                 var result = await StartPlay(ctx, search);

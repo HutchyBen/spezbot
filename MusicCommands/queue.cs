@@ -5,7 +5,7 @@ using DSharpPlus.Interactivity.Enums;
 using DSharpPlus.Entities;
 using DSharpPlus.Lavalink;
 
-namespace Music.MusicCommands
+namespace Music.Commands
 {
     public partial class MusicCommands : BaseCommandModule
     {

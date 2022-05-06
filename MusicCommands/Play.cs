@@ -3,10 +3,12 @@ using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using Microsoft.Extensions.Logging;
 using DSharpPlus.Lavalink;
-namespace Music.MusicCommands
+namespace Music.Commands
 {
     public partial class MusicCommands : BaseCommandModule
     {
+        // Makes sure the player is connected to the voice channel and if not, connects to it.
+        // Then makes request to lavalink and returns results
         private async Task<LavalinkLoadResult?> StartPlay(CommandContext ctx, Uri search)
         {
             await Join(ctx);

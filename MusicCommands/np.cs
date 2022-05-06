@@ -4,7 +4,7 @@ using DSharpPlus.Entities;
 using DSharpPlus.Lavalink;
 using System.Text;
 using DSharpPlus.Interactivity.Extensions;
-namespace Music.MusicCommands
+namespace Music.Commands
 {
     public partial class MusicCommands : BaseCommandModule
     {
