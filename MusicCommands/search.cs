@@ -14,7 +14,7 @@ namespace Music.Commands
             var inst = Servers[ctx.Guild.Id];
             if (inst != null) {
                 var result = await StartPlay(ctx, search);
-                var tracks = result?.Tracks.Take(5).ToArray();
+                var tracks = result.Tracks.Take(5).ToArray();
                 
                 if (tracks == null || tracks.Length == 0)
                 {

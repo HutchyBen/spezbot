@@ -3,6 +3,7 @@ using DSharpPlus.Lavalink.EventArgs;
 using DSharpPlus.Entities;
 using DSharpPlus;
 using Microsoft.Extensions.Logging;
+using Music.Commands;
 namespace Music
 {
 
@@ -181,9 +182,8 @@ namespace Music
 
         }
 
-        public async Task AddSong(LavalinkLoadResult result, DiscordMember member)
+        public async Task AddSong(SearchResult tracks, DiscordMember member, string playListName = "")
         {
-            // playlist
             var list = userSongs.FindIndex(x => x.member == member);
             if (list == -1)
             {
@@ -191,40 +191,28 @@ namespace Music
                 list = userSongs.Count - 1;
             }
 
-            if (result.LoadResultType == LavalinkLoadResultType.TrackLoaded || result.LoadResultType == LavalinkLoadResultType.SearchResult)
+            if (tracks.Tracks.Count() == 1)
             {
-                userSongs[list].queue.Add(result.Tracks.First());
+                userSongs[list].queue.Add(tracks.Tracks.First());
+
+                await AddMessage(tracks.Tracks.First(), member);
             }
-            else if (result.LoadResultType == LavalinkLoadResultType.PlaylistLoaded)
+            else
             {
-                foreach (var track in result.Tracks)
+                foreach (var track in tracks.Tracks)
                 {
-                    userSongs[list].queue.Add(track);
+                    userSongs[list].queue.Insert(0, track);
                 }
                 var embed = new DiscordEmbedBuilder
                 {
-                    Title = $":musical_note: Playlist {result.PlaylistInfo.Name} loaded",
-                    Description = $"{result.Tracks.Count()} tracks added",
+                    Title = $":musical_note: Playlist {tracks.PlayListName} loaded",
+                    Description = $"{tracks.Tracks.Count()} tracks added to start of your queue",
                     Color = DiscordColor.Green
                 };
                 await msgChannel.SendMessageAsync(embed: embed);
             }
-            else
-            {
-                var embed2 = new DiscordEmbedBuilder
-                {
-                    Title = ":warning: No matches",
-                    Description = "No matches found",
-                    Color = DiscordColor.Yellow
-                };
-                await msgChannel.SendMessageAsync(embed: embed2);
-            }
-
-            await AddMessage(result.Tracks.First(), member);
-
         }
-
-        public async Task AddNext(LavalinkLoadResult result, DiscordMember member, bool skip = false)
+        public async Task AddNext(SearchResult tracks, DiscordMember member, bool skip = false)
         {
             var list = userSongs.FindIndex(x => x.member == member);
             if (list == -1)
@@ -233,36 +221,26 @@ namespace Music
                 list = userSongs.FindIndex(x => x.member == member);
             }
 
-            if (result.LoadResultType == LavalinkLoadResultType.TrackLoaded || result.LoadResultType == LavalinkLoadResultType.SearchResult)
+
+            if (tracks.Tracks.Count() == 1)
             {
 
-                userSongs[list].queue.Insert(0, result.Tracks.First());
-
+                userSongs[list].queue.Insert(0, tracks.Tracks.First());
             }
-            else if (result.LoadResultType == LavalinkLoadResultType.PlaylistLoaded)
+            else
             {
-                foreach (var track in result.Tracks.Reverse())
+                tracks.Tracks.Reverse();
+                foreach (var track in tracks.Tracks)
                 {
                     userSongs[list].queue.Insert(0, track);
                 }
                 var embed = new DiscordEmbedBuilder
                 {
-                    Title = $":musical_note: Playlist {result.PlaylistInfo.Name} loaded",
-                    Description = $"{result.Tracks.Count()} tracks added to start of your queue",
+                    Title = $":musical_note: Playlist {tracks.PlayListName} loaded",
+                    Description = $"{tracks.Tracks.Count()} tracks added to start of your queue",
                     Color = DiscordColor.Green
                 };
                 await msgChannel.SendMessageAsync(embed: embed);
-            }
-            else
-            {
-                var embed2 = new DiscordEmbedBuilder
-                {
-                    Title = ":warning: No matches",
-                    Description = "No matches found",
-                    Color = DiscordColor.Yellow
-                };
-                connection.Node.Parent.Client.Logger.Log(LogLevel.Information, "No song added");
-                await msgChannel.SendMessageAsync(embed: embed2);
             }
 
             currentListIndex = list;
@@ -285,22 +263,22 @@ namespace Music
             else
             {
                 connection.Node.Parent.Client.Logger.Log(LogLevel.Information, "Added song to queue");
-                if (result.LoadResultType == LavalinkLoadResultType.TrackLoaded || result.LoadResultType == LavalinkLoadResultType.SearchResult)
+                if (tracks.Tracks.Count() == 1)
                 {
                     var queue = new DiscordEmbedBuilder
                     {
                         Title = "Added to front of queue",
-                        Description = $"{result.Tracks.First().Title}",
+                        Description = $"{tracks.Tracks.First().Title}",
                         Footer = new DiscordEmbedBuilder.EmbedFooter()
                         {
-                            Text = result.Tracks.First().Author
+                            Text = tracks.Tracks.First().Author
                         },
                         Author = new DiscordEmbedBuilder.EmbedAuthor()
                         {
                             IconUrl = member.GetAvatarUrl(ImageFormat.Png),
                             Name = member.DisplayName
                         },
-                        Url = result.Tracks.First().Uri.ToString(),
+                        Url = tracks.Tracks.First().Uri.ToString(),
                         Color = DiscordColor.Green
                     };
                     await msgChannel.SendMessageAsync(embed: queue);

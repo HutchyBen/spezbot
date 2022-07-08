@@ -17,6 +17,8 @@
     <PackageReference Include="DSharpPlus.CommandsNext" Version="4.2.0" />
     <PackageReference Include="DSharpPlus.Interactivity" Version="4.2.0" />
     <PackageReference Include="DSharpPlus.Lavalink" Version="4.2.0" />
+    <PackageReference Include="Profanity.Detector" Version="0.1.8" />
+    <PackageReference Include="SpotifyAPI.Web" Version="6.2.2" />
   </ItemGroup>
 
 </Project>

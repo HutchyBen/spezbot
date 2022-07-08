@@ -8,11 +8,14 @@ using DSharpPlus.Entities;
 using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.EventArgs;
+using SpotifyAPI.Web;
 
 namespace Music
 {
     class Bot
     {
+        static public ProfanityFilter.ProfanityFilter filter = new ProfanityFilter.ProfanityFilter();
+
         public static DiscordChannel? GetUserVC(DiscordMember member)
         {
             var state = member.VoiceState;
@@ -41,7 +44,14 @@ namespace Music
 
         static async Task MainAsync(string[] args)
         {
+            // load bad words from text file
+            filter.AddProfanity("flip");
+            filter.AddProfanity("frick");
+            filter.AddProfanity("fricking");
+
             var token = Environment.GetEnvironmentVariable("dtoken");
+            var spotID = Environment.GetEnvironmentVariable("spotID");
+            var spotSecret = Environment.GetEnvironmentVariable("spotSecret");
             Discord = new DiscordClient(new DiscordConfiguration()
             {
                 Token = token,
@@ -51,8 +61,17 @@ namespace Music
 
                 MinimumLogLevel = LogLevel.Information
             });
+
+            var config = SpotifyClientConfig
+                .CreateDefault()
+                .WithAuthenticator(new ClientCredentialsAuthenticator(spotID, spotSecret));
+
+            var spotify = new SpotifyClient(config);
+
+
             service = new ServiceCollection()
                 .AddSingleton<Dictionary<ulong, ServerInstance>>()
+                .AddSingleton<SpotifyClient>(spotify)
                 .BuildServiceProvider();
             var commands = Discord.UseCommandsNext(new CommandsNextConfiguration()
             {
@@ -86,8 +105,21 @@ namespace Music
             });
 
             Discord.VoiceStateUpdated += VoiceStateChange;
-
+            Discord.MessageCreated += MessageCreate;
             await Task.Delay(-1);
+        }
+
+        static async Task MessageCreate(DiscordClient client, MessageCreateEventArgs e)
+        {
+            // check for swear words
+            if (e.Author.IsBot)
+            {
+                return;
+            }
+            if (filter.ContainsProfanity(e.Message.Content))
+            {
+                await e.Message.RespondAsync("Please do not use bad words in this server.");
+            }
         }
 
         static async Task VoiceStateChange(DiscordClient client, VoiceStateUpdateEventArgs e)

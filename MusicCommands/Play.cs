@@ -5,15 +5,31 @@ using Microsoft.Extensions.Logging;
 using DSharpPlus.Lavalink;
 namespace Music.Commands
 {
+    public struct SearchResult
+    {
+        public List<LavalinkTrack> Tracks { get; set; }
+        public string PlayListName { get; set; }
+    }
     public partial class MusicCommands : BaseCommandModule
     {
         // Makes sure the player is connected to the voice channel and if not, connects to it.
         // Then makes request to lavalink and returns results
-        private async Task<LavalinkLoadResult?> StartPlay(CommandContext ctx, Uri search)
+        private async Task<SearchResult> StartPlay(CommandContext ctx, string search)
         {
             await Join(ctx);
 
             var inst = Servers[ctx.Guild.Id];
+            if (ctx.Member?.VoiceState == null || ctx.Member.VoiceState.Channel.Id != inst.channel.Id)
+            {
+                var embed = new DiscordEmbedBuilder
+                {
+                    Title = ":warning: You are not in the same voice channel as the bot",
+                    Description = "Join the voice channel of the bot to add songs to the queue.",
+                    Color = DiscordColor.Yellow
+                };
+                await ctx.RespondAsync(embed);
+                return new SearchResult();
+            }
             if (search == null)
             {
                 if (inst.connection.CurrentState.CurrentTrack != null)
@@ -21,7 +37,7 @@ namespace Music.Commands
                     await ctx.RespondAsync("Resuming...");
                     await inst.connection.ResumeAsync();
                     ctx.Client.Logger.Log(LogLevel.Information, "Resumed");
-                    return null;
+                    return new SearchResult();
                 }
                 else
                 {
@@ -32,76 +48,49 @@ namespace Music.Commands
                         Color = DiscordColor.Yellow
                     };
                     await ctx.RespondAsync(embed);
-                    return null;
+                    return new SearchResult();
                 }
             }
-
-            var tracks = await inst.connection.Node.Rest.GetTracksAsync(search);
-
-            if (tracks.LoadResultType == LavalinkLoadResultType.LoadFailed)
+            SearchResult tracks;
+            if (search.ToLower().Contains("open.spotify.com"))
             {
-                var err = new DiscordEmbedBuilder
+                Uri spotURI = new Uri(search);
+                switch (spotURI.Segments[1])
                 {
-                    Title = "::no_entry_sign: Failed to load track",
-                    Description = $"{tracks.Exception.Message}",
-                    Color = DiscordColor.Red
-                };
-                await ctx.Channel.SendMessageAsync(embed: err);
-                ctx.Client.Logger.Log(LogLevel.Information, "Failed to load track");
-                return null;
-            }
-            return tracks;
-        }
-        private async Task<LavalinkLoadResult?> StartPlay(CommandContext ctx, string search)
-        {
-            await Join(ctx);
+                    case "track/":
+                        tracks = await GetSpotifyTrack(inst, spotURI.Segments[2]);
 
-            var inst = Servers[ctx.Guild.Id];
-            if (ctx.Member?.VoiceState == null || ctx.Member.VoiceState.Channel.Id != inst.channel.Id) {
-                    var embed = new DiscordEmbedBuilder {
-                        Title = ":warning: You are not in the same voice channel as the bot",
-                        Description = "Join the voice channel of the bot to skip songs.",
-                        Color = DiscordColor.Yellow
-                    };
-                    await ctx.RespondAsync(embed);
-                    return null;
-            }
-            if (search == null)
-            {
-                if (inst.connection.CurrentState.CurrentTrack != null)
-                {
-                    await ctx.RespondAsync("Resuming...");
-                    await inst.connection.ResumeAsync();
-                    ctx.Client.Logger.Log(LogLevel.Information, "Resumed");
-                    return null;
+                        break;
+                    case "playlist/":
+                        tracks = await GetSpotifyPlaylist(inst, spotURI.Segments[2]);
+                        break;
+                    default:
+                        tracks = new SearchResult();
+                        break;
                 }
-                else
+            }
+            else
+            {
+                var lavaSearch = await inst.connection.Node.Rest.GetTracksAsync(search);
+                if (lavaSearch.LoadResultType == LavalinkLoadResultType.LoadFailed || lavaSearch.LoadResultType == LavalinkLoadResultType.NoMatches)
                 {
                     var embed = new DiscordEmbedBuilder
                     {
-                        Title = ":warning: You didn't provide a search term",
+                        Title = ":warning: No results found",
                         Description = "Try again.",
                         Color = DiscordColor.Yellow
                     };
                     await ctx.RespondAsync(embed);
-                    return null;
+                    return new SearchResult();
                 }
-            }
-
-            var tracks = await inst.connection.Node.Rest.GetTracksAsync(search);
-
-            if (tracks.LoadResultType == LavalinkLoadResultType.LoadFailed)
-            {
-                var err = new DiscordEmbedBuilder
-                {
-                    Title = "::no_entry_sign: Failed to load track",
-                    Description = $"{tracks.Exception.Message}",
-                    Color = DiscordColor.Red
+                
+                tracks = new SearchResult{
+                    PlayListName = lavaSearch.PlaylistInfo.Name,
+                    Tracks = lavaSearch.Tracks.ToList()
                 };
-                await ctx.Channel.SendMessageAsync(embed: err);
-                ctx.Client.Logger.Log(LogLevel.Information, "Failed to load track");
-                return null;
+                
             }
+
             return tracks;
         }
 
@@ -111,67 +100,34 @@ namespace Music.Commands
         public async Task Play(CommandContext ctx, [RemainingText] string search)
         {
 
-            var tracks = await StartPlay(ctx, search);
-            if (tracks == null)
+            var result = await StartPlay(ctx, search);
+            if (result.Tracks.Count() == 0)
                 return;
             var inst = Servers[ctx.Guild.Id];
-            await inst.AddSong(tracks, ctx.Member!);
-
-        }
-
-        [Command, Priority(1)]
-        public async Task Play(CommandContext ctx, Uri search)
-        {
-            await Join(ctx);
-            var tracks = await StartPlay(ctx, search);
-            if (tracks == null)
-                return;
-            var inst = Servers[ctx.Guild.Id];
-            await inst.AddSong(tracks, ctx.Member!);
+            
+            await inst.AddSong(result, ctx.Member!);
 
         }
 
         [Command("playnext"), Priority(0)]
         public async Task PlayNext(CommandContext ctx, [RemainingText] string search)
         {
-            var tracks = await StartPlay(ctx, search);
-            if (tracks == null)
+            var result = await StartPlay(ctx, search);
+            if (result.Tracks.Count() == 0)
                 return;
             var inst = Servers[ctx.Guild.Id];
-            await inst.AddNext(tracks, ctx.Member!);
+            await inst.AddNext(result, ctx.Member!);
 
-        }
-
-        [Command("playnext"), Priority(1)]
-        public async Task PlayNext(CommandContext ctx, Uri search)
-        {
-            await Join(ctx);
-            var tracks = await StartPlay(ctx, search);
-            if (tracks == null)
-                return;
-            var inst = Servers[ctx.Guild.Id];
-            await inst.AddNext(tracks, ctx.Member!);
         }
 
         [Command("PlayNow"), Priority(0)]
         public async Task PlayNow(CommandContext ctx, [RemainingText] string search)
         {
-            var tracks = await StartPlay(ctx, search);
-            if (tracks == null)
+            var result = await StartPlay(ctx, search);
+            if (result.Tracks.Count() == 0)
                 return;
             var inst = Servers[ctx.Guild.Id];
-            await inst.AddNext(tracks, ctx.Member!, true);
-        }
-
-        [Command("PlayNow"), Priority(1)]
-        public async Task PlayNow(CommandContext ctx, Uri search)
-        {
-            await Join(ctx);
-            var tracks = await StartPlay(ctx, search);
-            if (tracks == null)
-                return;
-            var inst = Servers[ctx.Guild.Id];
-            await inst.AddNext(tracks, ctx.Member!, true);
+            await inst.AddNext(result, ctx.Member!, skip: true);
         }
     }
 }
