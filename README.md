@@ -14,7 +14,7 @@ each person who has queue has there own queue which they can shuffle independent
 also asks like for confirmation to skip if not ur song so they cant say whoops i accidently skipped ur song.
 
 ## Command list
-- play <string/uri/none>
+- play <string/uri/none> (supports spotify (very janky lol cause i dont know how to load my own list of searchj terms as a playlit lol)) 
 - playnow <string/uri/none>
 - playnext <string/uri/none>
 - pause
@@ -34,10 +34,10 @@ also asks like for confirmation to skip if not ur song so they cant say whoops i
 - help
 ## Future Features
 
-- [ ] Spotify playlists and songs
+- [x] Spotify playlists and songs
 - [ ] Proper configs for each server
-- [ ] Search command
-- [ ] Reduce crashes (i think it crashes lots)
+- [x] Search command
+- [x] Reduce crashes (i think it crashes lots) [i havent seen it crash recently lol]
 ## FAQ
 
 #### who is spez
