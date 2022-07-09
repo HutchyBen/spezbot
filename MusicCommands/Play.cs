@@ -17,7 +17,7 @@ namespace Music.Commands
         private async Task<SearchResult> StartPlay(CommandContext ctx, string search)
         {
             await Join(ctx);
-            
+
             var inst = Servers[ctx.Guild.Id];
             if (ctx.Member?.VoiceState == null || ctx.Member.VoiceState.Channel.Id != inst.channel.Id)
             {
@@ -72,12 +72,14 @@ namespace Music.Commands
             else
             {
                 Uri? uri = null;
-                try {
+                try
+                {
                     uri = new Uri(search);
-                } catch {}
+                }
+                catch { }
 
                 var lavaSearch = uri == null ? await inst.connection.Node.Rest.GetTracksAsync(search) : await inst.connection.Node.Rest.GetTracksAsync(uri);
-                if (lavaSearch.LoadResultType == LavalinkLoadResultType.LoadFailed || lavaSearch.LoadResultType == LavalinkLoadResultType.NoMatches)
+                if (lavaSearch.LoadResultType == LavalinkLoadResultType.NoMatches)
                 {
                     var embed = new DiscordEmbedBuilder
                     {
@@ -88,17 +90,33 @@ namespace Music.Commands
                     await ctx.RespondAsync(embed);
                     return new SearchResult();
                 }
-                List<LavalinkTrack> ltrack;
-                if (lavaSearch.LoadResultType == LavalinkLoadResultType.PlaylistLoaded) {
-                    ltrack = lavaSearch.Tracks.ToList();
-                } else {
-                    ltrack = new List<LavalinkTrack>{lavaSearch.Tracks.First()};
+                else if (lavaSearch.LoadResultType == LavalinkLoadResultType.LoadFailed)
+                {
+                    var embed = new DiscordEmbedBuilder
+                    {
+                        Title = ":no_entry_sign: Cannot load that song",
+                        Description = "Try another version of the song.",
+                        Color = DiscordColor.Red
+                    };
+                    await ctx.RespondAsync(embed);
+                    return new SearchResult();
                 }
-                tracks = new SearchResult{
+                
+                List<LavalinkTrack> ltrack;
+                if (lavaSearch.LoadResultType == LavalinkLoadResultType.PlaylistLoaded)
+                {
+                    ltrack = lavaSearch.Tracks.ToList();
+                }
+                else
+                {
+                    ltrack = new List<LavalinkTrack> { lavaSearch.Tracks.First() };
+                }
+                tracks = new SearchResult
+                {
                     PlayListName = lavaSearch.PlaylistInfo.Name,
                     Tracks = ltrack
                 };
-                
+
             }
 
             return tracks;
@@ -114,7 +132,7 @@ namespace Music.Commands
             if (result.Tracks.Count() == 0)
                 return;
             var inst = Servers[ctx.Guild.Id];
-            
+
             await inst.AddSong(result, ctx.Member!);
 
         }
@@ -122,7 +140,7 @@ namespace Music.Commands
         [Command("playnext"), Priority(0)]
         public async Task PlayNext(CommandContext ctx, [RemainingText] string search)
         {
-            
+
             var result = await StartPlay(ctx, search);
             if (result.Tracks.Count() == 0)
                 return;

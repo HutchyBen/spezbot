@@ -1,7 +1,7 @@
 using DSharpPlus.CommandsNext;
 using SpotifyAPI.Web;
 using DSharpPlus.Lavalink;
-using DSharpPlus.Lavalink.Entities;
+using DSharpPlus.Entities;
 namespace Music.Commands
 {
     public partial class MusicCommands : BaseCommandModule
@@ -31,7 +31,7 @@ namespace Music.Commands
         {
             var playlist = await Spotify.Playlists.Get(search);
             var LavaTracks = new List<LavalinkTrack>();
-            if (playlist.Tracks.Items == null)
+            if (playlist.Tracks?.Items == null)
             {
                 return new SearchResult();
             }
@@ -40,8 +40,12 @@ namespace Music.Commands
 
                 if (item.Track is FullTrack track)
                 {
-
+                    if (!inst.connection.IsConnected)
+                    {
+                        return new SearchResult{Tracks = new List<LavalinkTrack>()};
+                    }
                     var searchTerm = $"{track.Artists[0].Name} - {track.Name}";
+                    Console.WriteLine(searchTerm);
                     var lavaSearch = await inst.connection.Node.Rest.GetTracksAsync(searchTerm);
 
                     if (lavaSearch.LoadResultType == LavalinkLoadResultType.NoMatches || lavaSearch.LoadResultType == LavalinkLoadResultType.LoadFailed)
@@ -53,13 +57,14 @@ namespace Music.Commands
                         switch (shit)
                         {
                             case 0:
-                                await inst.AddSong(new SearchResult{Tracks = new List<LavalinkTrack>{lavaSearch.Tracks.First()}}, fuck, silent: true);
+
+                                await inst.AddSong(new SearchResult { Tracks = new List<LavalinkTrack> { lavaSearch.Tracks.First() } }, fuck, silent: true);
                                 break;
                             case 1:
                                 await inst.AddNext(new SearchResult
                                 {
                                     PlayListName = "",
-                                    Tracks = new List<LavalinkTrack>{lavaSearch.Tracks.First()}
+                                    Tracks = new List<LavalinkTrack> { lavaSearch.Tracks.First() }
                                 }, fuck, silent: true);
                                 break;
                         }
@@ -69,7 +74,7 @@ namespace Music.Commands
             }
             return new SearchResult
             {
-                PlayListName = playlist.Name,
+                PlayListName = playlist.Name ?? "",
                 Tracks = new List<LavalinkTrack>()
             };
         }

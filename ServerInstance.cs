@@ -76,7 +76,8 @@ namespace Music
             {
                 currentListIndex++;
             }
-
+            if (!connection.IsConnected)
+                return;
             await connection.PlayAsync(NowPlaying.track);
             await PrintPlaying();
         }
