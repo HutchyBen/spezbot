@@ -17,7 +17,7 @@ namespace Music.Commands
         private async Task<SearchResult> StartPlay(CommandContext ctx, string search)
         {
             await Join(ctx);
-
+            
             var inst = Servers[ctx.Guild.Id];
             if (ctx.Member?.VoiceState == null || ctx.Member.VoiceState.Channel.Id != inst.channel.Id)
             {
@@ -62,7 +62,7 @@ namespace Music.Commands
 
                         break;
                     case "playlist/":
-                        tracks = await GetSpotifyPlaylist(inst, spotURI.Segments[2]);
+                        tracks = await GetSpotifyPlaylist(inst, spotURI.Segments[2], ctx.Member);
                         break;
                     default:
                         tracks = new SearchResult();
@@ -71,7 +71,12 @@ namespace Music.Commands
             }
             else
             {
-                var lavaSearch = await inst.connection.Node.Rest.GetTracksAsync(search);
+                Uri? uri = null;
+                try {
+                    uri = new Uri(search);
+                } catch {}
+
+                var lavaSearch = uri == null ? await inst.connection.Node.Rest.GetTracksAsync(search) : await inst.connection.Node.Rest.GetTracksAsync(uri);
                 if (lavaSearch.LoadResultType == LavalinkLoadResultType.LoadFailed || lavaSearch.LoadResultType == LavalinkLoadResultType.NoMatches)
                 {
                     var embed = new DiscordEmbedBuilder
@@ -83,10 +88,15 @@ namespace Music.Commands
                     await ctx.RespondAsync(embed);
                     return new SearchResult();
                 }
-                
+                List<LavalinkTrack> ltrack;
+                if (lavaSearch.LoadResultType == LavalinkLoadResultType.PlaylistLoaded) {
+                    ltrack = lavaSearch.Tracks.ToList();
+                } else {
+                    ltrack = new List<LavalinkTrack>{lavaSearch.Tracks.First()};
+                }
                 tracks = new SearchResult{
                     PlayListName = lavaSearch.PlaylistInfo.Name,
-                    Tracks = lavaSearch.Tracks.ToList()
+                    Tracks = ltrack
                 };
                 
             }
@@ -112,6 +122,7 @@ namespace Music.Commands
         [Command("playnext"), Priority(0)]
         public async Task PlayNext(CommandContext ctx, [RemainingText] string search)
         {
+            
             var result = await StartPlay(ctx, search);
             if (result.Tracks.Count() == 0)
                 return;

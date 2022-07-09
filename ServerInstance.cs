@@ -182,7 +182,7 @@ namespace Music
 
         }
 
-        public async Task AddSong(SearchResult tracks, DiscordMember member, string playListName = "")
+        public async Task AddSong(SearchResult tracks, DiscordMember member, string playListName = "", bool silent = false)
         {
             var list = userSongs.FindIndex(x => x.member == member);
             if (list == -1)
@@ -195,7 +195,10 @@ namespace Music
             {
                 userSongs[list].queue.Add(tracks.Tracks.First());
 
-                await AddMessage(tracks.Tracks.First(), member);
+                if (!silent) {
+                    await AddMessage(tracks.Tracks.First(), member);
+                }
+                
             }
             else
             {
@@ -211,8 +214,20 @@ namespace Music
                 };
                 await msgChannel.SendMessageAsync(embed: embed);
             }
+            if (connection.CurrentState.CurrentTrack == null)
+            {
+                NowPlaying = new NowSong(userSongs[list].member, userSongs[list].queue[0]);
+                await connection.PlayAsync(NowPlaying.track);
+                if (userSongs[list].queue.Count <= 1)
+                {
+                    userSongs.RemoveAt(list);
+                }
+                if (!silent)
+                    await PrintPlaying();
+            }
+
         }
-        public async Task AddNext(SearchResult tracks, DiscordMember member, bool skip = false)
+        public async Task AddNext(SearchResult tracks, DiscordMember member, bool skip = false, bool silent = false)
         {
             var list = userSongs.FindIndex(x => x.member == member);
             if (list == -1)
@@ -253,8 +268,8 @@ namespace Music
                 {
                     userSongs.RemoveAt(list);
                 }
-
-                await PrintPlaying();
+                if (!silent)
+                    await PrintPlaying();
             }
             else if (skip)
             {
