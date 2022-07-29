@@ -36,7 +36,6 @@ namespace Music.Commands
                 {
                     await ctx.RespondAsync("Resuming...");
                     await inst.connection.ResumeAsync();
-                    ctx.Client.Logger.Log(LogLevel.Information, "Resumed");
                     return new SearchResult();
                 }
                 else
