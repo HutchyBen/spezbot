@@ -38,7 +38,6 @@ namespace Music.Commands
             var exists = Servers.TryGetValue(ctx.Guild.Id, out inst);
             if (exists)
             {
-                ctx.Client.Logger.Log(LogLevel.Information, "Left");
                 await inst!.connection.DisconnectAsync();
                 Servers.Remove(ctx.Guild.Id);
             }

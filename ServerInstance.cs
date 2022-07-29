@@ -53,6 +53,10 @@ namespace Music
         public NowSong NowPlaying;
         private async Task PlaybackFinished(LavalinkGuildConnection ll, TrackFinishEventArgs e)
         {
+            if(!connection.IsConnected) 
+                return;
+            
+
             if (userSongs.Count == 0)
             {
                 await connection.StopAsync();
@@ -114,12 +118,13 @@ namespace Music
             var con = node.GetGuildConnection(channel.Guild);
             if (con != null)
             {
-                this.connection = con;
+                Console.WriteLine("Existing Connection");
+                con.DisconnectAsync();
             }
-            else
-            {
-                this.connection = node.ConnectAsync(channel).ConfigureAwait(false).GetAwaiter().GetResult();
-            }
+            
+            
+            this.connection = node.ConnectAsync(channel).ConfigureAwait(false).GetAwaiter().GetResult();
+            this.connection.StopAsync();
             connection.PlaybackFinished += PlaybackFinished;
             this.userSongs = new List<UserSongList>();
             this.msgChannel = msgChan;

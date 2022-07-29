@@ -118,44 +118,28 @@ namespace Music
             }
             if (filter.ContainsProfanity(e.Message.Content))
             {
-                await e.Message.RespondAsync("Please do not use bad words in this server.");
+                if (e.Guild.Id == 802660679856160818) 
+                    await e.Message.RespondAsync("Please do not use bad words in this server.");
+                    
             }
         }
 
         static async Task VoiceStateChange(DiscordClient client, VoiceStateUpdateEventArgs e)
         {
+            
             var Servers = service.GetRequiredService<Dictionary<ulong, ServerInstance>>();
             ServerInstance? inst;
             if (Servers.TryGetValue(e.Guild.Id, out inst))
             {
-                if (inst == null)
+                
+                if (e.After.Channel == null && e.User.Id == client.CurrentUser.Id)
                 {
+                    Servers.Remove(e.Guild.Id);
                     return;
                 }
-                if (e.Before == null)
-                {
-                    return;
-                }
-                if (e.After == null)
-                {
-                    return;
-                }
-                if (e.After.Channel == null)
-                {
-                    return;
-                }
-                if (e.Before.Channel == null)
-                {
-                    return;
-                }
-                if (e.Before.Channel.Id == e.After.Channel.Id)
-                {
-                    return;
-                }
-                if (e.Before.Channel.Id == inst.channel.Id)
-                {
 
-                    await Discord!.SendMessageAsync(inst.msgChannel, "Moved channel");
+                if (e.After.Channel.Id != inst.channel.Id && e.User.Id == client.CurrentUser.Id )
+                {
                     inst.channel = e.After.Channel;
                 }
 
