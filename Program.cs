@@ -14,6 +14,8 @@ namespace Music
 {
     class Bot
     {
+        static Random rand;
+        static Dictionary<string, Markov> Markovs;
         static public ProfanityFilter.ProfanityFilter filter = new ProfanityFilter.ProfanityFilter();
 
         public static DiscordChannel? GetUserVC(DiscordMember member)
@@ -37,13 +39,25 @@ namespace Music
         public static LavalinkExtension? Lavalink;
         static void Main(string[] args)
         {
+
             MainAsync(args).ConfigureAwait(false).GetAwaiter().GetResult();
 
         }
-
+        static void LoadModels()
+        {
+            Directory.GetFiles("models").ToList().ForEach(file =>
+            {
+                var id = file.Split('\\').Last().Split('/').Last().Split('.').First();
+                var mk = new Markov(id);
+                Markovs.Add(id, mk);
+            });
+        }
 
         static async Task MainAsync(string[] args)
         {
+            rand = new Random();
+            Markovs = new Dictionary<string, Markov>();
+            LoadModels();
             // load bad words from text file
             filter.AddProfanity("flip");
             filter.AddProfanity("frick");
@@ -72,13 +86,16 @@ namespace Music
             service = new ServiceCollection()
                 .AddSingleton<Dictionary<ulong, ServerInstance>>()
                 .AddSingleton<SpotifyClient>(spotify)
+                .AddSingleton<Dictionary<string, Markov>>(Markovs)
                 .BuildServiceProvider();
             var commands = Discord.UseCommandsNext(new CommandsNextConfiguration()
             {
+
                 CaseSensitive = false,
                 StringPrefixes = new[] { "spez!" },
                 EnableMentionPrefix = true,
                 Services = service
+
             });
             commands.RegisterCommands<TestCommands>();
             commands.RegisterCommands<Commands.MusicCommands>();
@@ -111,34 +128,68 @@ namespace Music
 
         static async Task MessageCreate(DiscordClient client, MessageCreateEventArgs e)
         {
-            // check for swear words
-            if (e.Author.IsBot)
+            if (e.Message.Author.Id == Discord.CurrentUser.Id)
             {
                 return;
             }
-            if (filter.ContainsProfanity(e.Message.Content))
+
+            Markov? mk;
+            if (!Markovs.ContainsKey(e.Channel.Guild.Id.ToString()))
+                Markovs.Add(e.Channel.Guild.Id.ToString(), new Markov(e.Channel.Guild.Id.ToString()));
+
+            mk = Markovs[e.Channel.Guild.Id.ToString()];
+            if (!e.Message.Content.StartsWith("spez!"))
+                if (!e.Message.Author.IsBot || e.Message.Author.Id == 974297735559806986 || e.Message.Author.Id == 247283454440374274)
+                {
+                    if (e.Message.Content.Trim() != "")
+                        mk.Add(e.Message.Content.Trim());
+
+                    foreach (var attachment in e.Message.Attachments)
+                    {
+                        mk.Add(attachment.Url);
+                    }
+                }
+            if (e.Message.Author.Id == 974297735559806986)
             {
-                if (e.Guild.Id == 802660679856160818) 
-                    await e.Message.RespondAsync("Please do not use bad words in this server.");
-                    
+                var cnext = client.GetCommandsNext();
+                var msg = e.Message;
+
+                var cmdStart = msg.GetStringPrefixLength("spez!");
+                if (cmdStart != -1)
+                {
+                    var prefix = msg.Content.Substring(0, cmdStart);
+                    var cmdString = msg.Content.Substring(cmdStart);
+
+                    var command = cnext.FindCommand(cmdString, out var args);
+                    if (command != null)
+                    {
+                        var ctx = cnext.CreateContext(msg, prefix, command, args);
+                        Task.Run(async () => await cnext.ExecuteCommandAsync(ctx));
+                    }
+                }
             }
+
+            if (e.Message.MentionedUsers.Any(x => x.Id == client.CurrentUser.Id) || rand.Next(10) <= 1 || e.Message.Content.Contains("spez"))
+                await e.Message.RespondAsync(mk.Generate());
+
         }
 
         static async Task VoiceStateChange(DiscordClient client, VoiceStateUpdateEventArgs e)
         {
-            
+
             var Servers = service.GetRequiredService<Dictionary<ulong, ServerInstance>>();
             ServerInstance? inst;
             if (Servers.TryGetValue(e.Guild.Id, out inst))
             {
-                
+
                 if (e.After.Channel == null && e.User.Id == client.CurrentUser.Id)
                 {
                     Servers.Remove(e.Guild.Id);
                     return;
                 }
-
-                if (e.After.Channel.Id != inst.channel.Id && e.User.Id == client.CurrentUser.Id )
+                if (e.After.Channel == null)
+                    return;
+                if (e.After.Channel.Id != inst.channel.Id && e.User.Id == client.CurrentUser.Id)
                 {
                     inst.channel = e.After.Channel;
                 }

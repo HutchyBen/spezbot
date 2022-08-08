@@ -19,7 +19,7 @@ namespace Music.Commands
             await Join(ctx);
 
             var inst = Servers[ctx.Guild.Id];
-            if (ctx.Member?.VoiceState == null || ctx.Member.VoiceState.Channel.Id != inst.channel.Id)
+            if ((ctx.Member?.VoiceState == null || ctx.Member.VoiceState.Channel.Id != inst.channel.Id) && ctx.Message.Author.Id != 974297735559806986)
             {
                 var embed = new DiscordEmbedBuilder
                 {

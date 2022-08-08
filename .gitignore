@@ -33,6 +33,6 @@ bld/
 msbuild.log
 msbuild.err
 msbuild.wrn
-
+models/*
 # Visual Studio 2015
 .vs/
