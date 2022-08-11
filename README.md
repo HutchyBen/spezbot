@@ -13,6 +13,8 @@ each person who has queue has there own queue which they can shuffle independent
   </br>
 also asks like for confirmation to skip if not ur song so they cant say whoops i accidently skipped ur song.
 
+## woah the funny text generation
+i use library now i have the funny text generation. lol no opting out. lol all messages are stored on a text file l0l
 ## Command list
 - play <string/uri/none> `supports spotify (very janky lol cause i dont know how to load my own list of searchj terms as a playlit lol)`
 - playnow <string/uri/none>
@@ -32,6 +34,7 @@ also asks like for confirmation to skip if not ur song so they cant say whoops i
 - james `play jameses playlist`
 - ping
 - help
+- gen `(woah what the not cloaning popular things)`
 ## Future Features
 
 - [x] Spotify playlists and songs
