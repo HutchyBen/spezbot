@@ -66,7 +66,7 @@ namespace Music.Commands
                     {
                         break;
                     }
-                    tings.Add($"{currItem}. {clone[index].queue[0].Title} `{clone[index].queue[0].Length.ToString()}` {clone[index].member.Mention}");
+                    tings.Add($"{(currItem == 1 ? ":headphones:" : (currItem-1).ToString() + ".")} {clone[index].queue[0].Title} `{clone[index].queue[0].Length.ToString()}` {clone[index].member.Mention}");
                     clone[index].queue.RemoveAt(0);
                     if (clone[index].queue.Count == 0)
                     {

@@ -51,43 +51,9 @@ namespace Music
         public int currentListIndex = 0;
         public DiscordChannel msgChannel;
         public NowSong NowPlaying;
-        private async Task PlaybackFinished(LavalinkGuildConnection ll, TrackFinishEventArgs e)
+        private async Task PlaybackStarted(LavalinkGuildConnection connection, TrackStartEventArgs e)
         {
-            if (!connection.IsConnected)
-                return;
-
-
-            if (userSongs.Count == 0)
-            {
-                await connection.StopAsync();
-                return;
-            }
-
-
-
-            NowPlaying = new NowSong(userSongs[currentListIndex].member, userSongs[currentListIndex].queue[0]);
-            userSongs[currentListIndex].queue.RemoveAt(0);
-            if (userSongs[currentListIndex].queue.Count == 0)
-            {
-                userSongs.RemoveAt(currentListIndex);
-            }
-
-            if (currentListIndex >= userSongs.Count - 1)
-            {
-                currentListIndex = 0;
-            }
-            else
-            {
-                currentListIndex++;
-            }
-            if (!connection.IsConnected)
-                return;
-            await connection.PlayAsync(NowPlaying.track);
-            await PrintPlaying();
-        }
-        private async Task PrintPlaying()
-        {
-            var embed = new DiscordEmbedBuilder
+             var embed = new DiscordEmbedBuilder
             {
                 Title = "Now playing",
                 Description = $"{NowPlaying.track.Title}",
@@ -104,6 +70,40 @@ namespace Music
                 Url = NowPlaying.track.Uri.ToString(),
             };
             await msgChannel.SendMessageAsync(embed: embed);
+        }
+        private async Task PlaybackFinished(LavalinkGuildConnection ll, TrackFinishEventArgs e)
+        {
+            if (!connection.IsConnected)
+                return;
+
+
+            if (userSongs.Count == 0)
+            {
+                await connection.StopAsync();
+                return;
+            }
+
+
+
+
+            userSongs[currentListIndex].queue.RemoveAt(0);
+            if (userSongs[currentListIndex].queue.Count == 0)
+            {
+                userSongs.RemoveAt(currentListIndex);
+            }
+
+            if (currentListIndex >= userSongs.Count - 1)
+            {
+                currentListIndex = 0;
+            }
+            else
+            {
+                currentListIndex++;
+            }
+            if (!connection.IsConnected)
+                return;
+            NowPlaying = new NowSong(userSongs[currentListIndex].member, userSongs[currentListIndex].queue[0]);
+            await connection.PlayAsync(NowPlaying.track);
         }
         public ServerInstance(DiscordChannel vc, DiscordClient client, DiscordChannel msgChan)
         {
@@ -126,12 +126,38 @@ namespace Music
             this.connection = node.ConnectAsync(channel).ConfigureAwait(false).GetAwaiter().GetResult();
             this.connection.StopAsync();
             connection.PlaybackFinished += PlaybackFinished;
+            connection.PlaybackStarted += PlaybackStarted;
             this.userSongs = new List<UserSongList>();
             this.msgChannel = msgChan;
         }
-        public async Task Skip()
+        public async Task Skip(int amount = 1)
         {
+            if (amount == 1) {
+                await connection.StopAsync();
+                return;
+            }
+            if (amount - 1 <= 0)
+                return;
 
+            for (int i = 0; i < amount - 1; i++)
+            {
+                userSongs[currentListIndex].queue.RemoveAt(0);
+                if (userSongs[currentListIndex].queue.Count == 0)
+                {
+                    userSongs.RemoveAt(currentListIndex);
+                }
+                if (userSongs.Count == 0) {
+                    break;
+                }
+                if (currentListIndex >= userSongs.Count - 1)
+                {
+                    currentListIndex = 0;
+                }
+                else
+                {
+                    currentListIndex++;
+                }
+            }
             await connection.StopAsync();
         }
 
@@ -139,18 +165,8 @@ namespace Music
         public async Task AddMessage(LavalinkTrack track, DiscordMember member)
         {
             var list = userSongs.FindIndex(x => x.member == member);
-            if (connection.CurrentState.CurrentTrack == null)
-            {
-                NowPlaying = new NowSong(userSongs[list].member, userSongs[list].queue[0]);
-                await connection.PlayAsync(NowPlaying.track);
-                if (userSongs[list].queue.Count <= 1)
-                {
-                    userSongs.RemoveAt(list);
-                }
-                await PrintPlaying();
-            }
-            else
-            {
+            if (connection.CurrentState.CurrentTrack != null)
+{
                 connection.Node.Parent.Client.Logger.Log(LogLevel.Information, "Added song to queue");
 
                 var queue = new DiscordEmbedBuilder
@@ -211,7 +227,7 @@ namespace Music
             {
                 foreach (var track in tracks.Tracks)
                 {
-                    userSongs[list].queue.Insert(0, track);
+                    userSongs[list].queue.Add(track);
                 }
                 var embed = new DiscordEmbedBuilder
                 {
@@ -221,16 +237,14 @@ namespace Music
                 };
                 await msgChannel.SendMessageAsync(embed: embed);
             }
+            Console.WriteLine("added song");
             if (connection.CurrentState.CurrentTrack == null)
             {
+                Console.WriteLine("playing song");
                 NowPlaying = new NowSong(userSongs[list].member, userSongs[list].queue[0]);
                 await connection.PlayAsync(NowPlaying.track);
-                if (userSongs[list].queue.Count <= 1)
-                {
-                    userSongs.RemoveAt(list);
-                }
-                if (!silent)
-                    await PrintPlaying();
+
+                Console.WriteLine(userSongs[list].queue.Count);
             }
 
         }
@@ -275,12 +289,10 @@ namespace Music
                 {
                     userSongs.RemoveAt(list);
                 }
-                if (!silent)
-                    await PrintPlaying();
             }
             else if (skip)
             {
-                await Skip();
+                await Skip(1);
             }
             else
             {

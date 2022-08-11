@@ -126,7 +126,6 @@ namespace Music.Commands
         [Command, Aliases("p"), Priority(0)]
         public async Task Play(CommandContext ctx, [RemainingText] string search)
         {
-
             var result = await StartPlay(ctx, search);
             if (result.Tracks.Count() == 0)
                 return;
@@ -139,7 +138,6 @@ namespace Music.Commands
         [Command("playnext"), Priority(0)]
         public async Task PlayNext(CommandContext ctx, [RemainingText] string search)
         {
-
             var result = await StartPlay(ctx, search);
             if (result.Tracks.Count() == 0)
                 return;

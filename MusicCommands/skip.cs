@@ -8,7 +8,7 @@ namespace Music.Commands {
 
 
         [Command("skip")]
-        public async Task Skip(CommandContext ctx) {
+        public async Task Skip(CommandContext ctx, int amount = 1) {
             var inst = Servers[ctx.Guild.Id];
             if (inst != null) {
                 // check if user is in bots voice channel
@@ -33,11 +33,11 @@ namespace Music.Commands {
                     await ctx.RespondAsync(embed: embed);
                     var poo = await ctx.Message.GetNextMessageAsync(m => m.Content.ToLower() == "skip");
                     if (!poo.TimedOut) {
-                        await inst.Skip();
+                        await inst.Skip(amount);
                     }
                     return;
                 }
-                await inst.Skip();
+                await inst.Skip(amount);
             }
             
         }

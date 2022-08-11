@@ -123,11 +123,59 @@ namespace Music
 
             Discord.VoiceStateUpdated += VoiceStateChange;
             Discord.MessageCreated += MessageCreate;
+            Discord.GuildMemberAdded += GuildMemberAdd;
+            Discord.GuildMemberRemoved += GuildMemberRemove;
             await Task.Delay(-1);
         }
 
+        static async Task GuildMemberAdd(DiscordClient client, GuildMemberAddEventArgs e)
+        {
+            if (e.Guild.Id == 802660679856160818)
+            {
+                var mCount = 0;
+                foreach (var member in e.Guild.Members)
+                {
+                    if (!member.Value.IsBot)
+                    {
+                        mCount++;
+                    }
+                }
+                var embed = new DiscordEmbedBuilder();
+                embed.WithAuthor($"{e.Member.Username}#{e.Member.Discriminator}", null, e.Member.AvatarUrl);
+                embed.WithDescription("has joined the server");
+                embed.WithColor(DiscordColor.Green);
+                embed.AddField("Member Count", mCount.ToString());
+                await client.SendMessageAsync(await client.GetChannelAsync(802963819881824256), embed);
+            }
+        }
+
+        static async Task GuildMemberRemove(DiscordClient client, GuildMemberRemoveEventArgs e)
+        {
+            if (e.Guild.Id == 802660679856160818)
+            {
+                var mCount = 0;
+                foreach (var member in e.Guild.Members)
+                {
+                    if (!member.Value.IsBot)
+                    {
+                        mCount++;
+                    }
+                }
+                var embed = new DiscordEmbedBuilder();
+                embed.WithAuthor($"{e.Member.Username}#{e.Member.Discriminator}", null, e.Member.AvatarUrl);
+                embed.WithDescription("has left the server");
+                embed.WithColor(DiscordColor.Red);
+                embed.AddField("Member Count", mCount.ToString());
+                await client.SendMessageAsync(await client.GetChannelAsync(802963819881824256), embed);
+            }
+        }
         static async Task MessageCreate(DiscordClient client, MessageCreateEventArgs e)
         {
+            // what the personal channel
+            if (e.Message.ChannelId == 802963819881824256)
+            {
+                return;
+            }
             if (e.Message.Author.Id == Discord.CurrentUser.Id)
             {
                 return;
@@ -170,8 +218,14 @@ namespace Music
             }
 
             if (e.Message.MentionedUsers.Any(x => x.Id == client.CurrentUser.Id) || rand.Next(10) <= 1 || e.Message.Content.Contains("spez"))
-                await e.Message.RespondAsync(mk.Generate());
+            {
+                var content = mk.Generate();
+                if (content.Trim() != "")
+                {
+                    await e.Message.RespondAsync(content);
+                }
 
+            }
         }
 
         static async Task VoiceStateChange(DiscordClient client, VoiceStateUpdateEventArgs e)
