@@ -53,7 +53,7 @@ namespace Music
         public NowSong NowPlaying;
         private async Task PlaybackStarted(LavalinkGuildConnection connection, TrackStartEventArgs e)
         {
-             var embed = new DiscordEmbedBuilder
+            var embed = new DiscordEmbedBuilder
             {
                 Title = "Now playing",
                 Description = $"{NowPlaying.track.Title}",
@@ -132,7 +132,8 @@ namespace Music
         }
         public async Task Skip(int amount = 1)
         {
-            if (amount == 1) {
+            if (amount == 1)
+            {
                 await connection.StopAsync();
                 return;
             }
@@ -146,7 +147,8 @@ namespace Music
                 {
                     userSongs.RemoveAt(currentListIndex);
                 }
-                if (userSongs.Count == 0) {
+                if (userSongs.Count == 0)
+                {
                     break;
                 }
                 if (currentListIndex >= userSongs.Count - 1)
@@ -166,7 +168,7 @@ namespace Music
         {
             var list = userSongs.FindIndex(x => x.member == member);
             if (connection.CurrentState.CurrentTrack != null)
-{
+            {
                 connection.Node.Parent.Client.Logger.Log(LogLevel.Information, "Added song to queue");
 
                 var queue = new DiscordEmbedBuilder
@@ -237,10 +239,8 @@ namespace Music
                 };
                 await msgChannel.SendMessageAsync(embed: embed);
             }
-            Console.WriteLine("added song");
             if (connection.CurrentState.CurrentTrack == null)
             {
-                Console.WriteLine("playing song");
                 NowPlaying = new NowSong(userSongs[list].member, userSongs[list].queue[0]);
                 await connection.PlayAsync(NowPlaying.track);
 
